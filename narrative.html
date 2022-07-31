@@ -1,0 +1,345 @@
+<html>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/d3-annotation/2.5.1/d3-annotation.min.js"
+    integrity="sha512-iBAeBWWWFb8HqSBcrqcz98iIpuVH1la39dEYHtyQ/pGpeCQTQVvLJOWAuhv2Q7JSHp9k7hWA7sGxU3hHJe+tFg=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      color: white;
+      text-align: center;
+    }
+
+    ul {
+      color: black;
+      background-color: wheat;
+    }
+
+    button {
+      background: rgba(23, 151, 255, 1);
+      border: none;
+      border-radius: 5px;
+      padding: 5px;
+      color: white;
+      box-shadow: 1px 1px 5px 0px rgba(80, 167, 255, 0.75);
+    }
+
+    #container {
+      background: black;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #navigation {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    #scene-one,
+    #scene-two,
+    #scene-three {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: 0.3s ease-in-out;
+    }
+
+    #scene-two,
+    #scene-three {
+      opacity: 0;
+      position: absolute;
+    }
+
+    .tooltip {
+      position: fixed;
+      border-radius: 10px;
+      background-color: rgba(23, 151, 255, 0.95);
+      box-shadow: 1px 1px 5px 0px rgba(80, 167, 255, 0.75);
+      padding: 10px;
+      top: 20;
+      left: 20;
+    }
+
+    circle {
+      fill: lightblue;
+      stroke: white;
+    }
+
+    rect {
+      fill: lightblue;
+      stroke: white;
+    }
+  </style>
+  <body onload="init()">
+    <div id="container">
+      <h1>Average data for 2017 automobile manufacturers</h1>
+      <nav id="navigation">
+        <button onclick="showSceneOne()">1</button>
+        <button onclick="showSceneTwo()">2</button>
+        <button onclick="showSceneThree()">3</button>
+      </nav>
+      <div id="scenes-container">
+        <div id="scene-one">
+          <h3>Slide 1</h3>
+          <div>
+            <p>Tip: Hover on each data point to see more information</p>
+          </div>
+          <svg id="scatter-plot" width="600" height="600"></svg>
+          <div class="tooltip" opacity="0"></div>
+        </div>
+        <div id="scene-two">
+          <h2>Cars Per Brand</h2>
+          <h3>Slide 2</h3>
+          <svg id="stacked-barplot" width="1000" height="600"></svg>
+        </div>
+        <div id="scene-three">
+          <h2>Cars per Fuel Type</h2>
+          <h3>Slide 3</h3>
+          <svg id="pie-chart" width="1000" height="600"></svg>
+        </div>
+      </div>
+    </div>
+    <script defer>
+      const sceneOne = document.getElementById("scene-one");
+      const sceneTwo = document.getElementById("scene-two");
+      const sceneThree = document.getElementById("scene-three");
+
+      let sceneOnScreen = sceneOne;
+
+      function showSceneOne() {
+        sceneOnScreen.style.transform = `translateX(${-1200}px)`;
+        setTimeout(() => {
+          sceneOnScreen.style.position = "absolute";
+          sceneOne.style.opacity = "1";
+          sceneOne.style.transform = `translateX(${0}px)`;
+          sceneOne.style.position = "inherit";
+          sceneOnScreen = sceneOne;
+        }, 300);
+      }
+
+      function showSceneTwo() {
+        sceneOnScreen.style.transform = `translateX(${-1200}px)`;
+        setTimeout(() => {
+          sceneOnScreen.style.position = "absolute";
+          sceneTwo.style.opacity = "1";
+          sceneTwo.style.transform = `translateX(${0}px)`;
+          sceneTwo.style.position = "inherit";
+          sceneOnScreen = sceneTwo;
+        }, 300);
+      }
+
+      function showSceneThree() {
+        sceneOnScreen.style.transform = `translateX(${-1200}px)`;
+        setTimeout(() => {
+          sceneOnScreen.style.position = "absolute";
+          sceneThree.style.opacity = "1";
+          sceneThree.style.transform = `translateX(${0}px)`;
+          sceneThree.style.position = "inherit";
+          sceneOnScreen = sceneThree;
+        }, 300);
+      }
+
+      async function init() {
+        const carsData = await d3.csv("https://flunky.github.io/cars2017.csv");
+        console.log(carsData);
+
+        const buildPieChart = () => {
+          const pie = d3.pie().value((d) => d.value);
+          const arc = d3.arc().innerRadius(0).outerRadius(150);
+
+          const electricCars = carsData.filter(
+            (car) => car.Fuel === "Electricity"
+          ).length;
+          const dieselCars = carsData.filter(
+            (car) => car.Fuel === "Diesel"
+          ).length;
+          const gasolineCars = carsData.filter(
+            (car) => car.Fuel === "Gasoline"
+          ).length;
+
+          const pieData = {
+            Electricity: electricCars,
+            Gasoline: gasolineCars,
+            Diesel: dieselCars,
+          };
+
+          const color = d3.scaleOrdinal().domain(pieData).range(d3.schemeSet2);
+          const dataReady = pie(d3.entries(pieData));
+
+          const pieChart = d3.select("#pie-chart");
+          const labelsCentroid = [
+            [340, 70],
+            [400, 220],
+            [380, 25],
+          ];
+
+          pieChart
+            .append("g")
+            .attr("transform", "translate(400,150)")
+            .selectAll("path")
+            .data(dataReady)
+            .enter()
+            .append("path")
+            .attr("d", arc)
+            .attr("fill", (d) => color(d.data.key))
+            .attr("stroke", "black")
+            .style("stroke-width", "2px");
+
+          pieChart
+            .selectAll("slices")
+            .data(dataReady)
+            .enter()
+            .append("text")
+            .text((d) => d.data.key)
+            .attr("transform", (d, i) => `translate(${labelsCentroid[i]})`)
+            .style("text-anchor", "middle")
+            .style("font-size", 17);
+        };
+
+        const buildStackedBarplot = () => {
+          const groups = d3
+            .map(carsData, function (d) {
+              return d.Make;
+            })
+            .keys();
+          const subgroups = carsData.columns.slice(1);
+
+          // set the dimensions and margins of the graph
+          const width = 500;
+          const height = 500;
+
+          const carsPerBrand = groups.map((brand) => {
+            return {
+              group: brand,
+              count: carsData.filter((car) => car.Make === brand).length,
+            };
+          });
+
+          const svg = d3
+            .select("#stacked-barplot")
+            .append("g")
+            .attr("transform", "translate(50,50)");
+
+          // Add X axis
+          const x = d3
+            .scaleBand()
+            .domain(groups)
+            .range([0, 900])
+            .padding([0.1]);
+          svg
+            .append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x).tickSizeOuter(0))
+            .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("color", "white")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", "rotate(-65)");
+
+          // Add Y axis
+          const y = d3.scaleLinear().domain([0, 10]).range([0, height]);
+          const yAxis = d3.scaleLinear().domain([0, 10]).range([height, 0]);
+          svg.append("g").call(d3.axisLeft(yAxis)).attr("color", "white");
+
+          svg
+            .selectAll("dot")
+            .data(carsPerBrand)
+            .enter()
+            .append("rect")
+            .attr("x", (d) => x(d.group))
+            .attr("y", (d) => 500 - y(d.count))
+            .transition()
+            .duration(1500)
+            .attr("height", (d) => y(d.count))
+            .attr("width", x.bandwidth());
+        };
+
+        const buildScatterPlot = () => {
+          const x = d3.scaleLog().base(10).domain([10, 150]).range([0, 500]);
+          const y = d3.scaleLog().base(10).domain([10, 150]).range([600, 0]);
+
+          const tooltip = d3.select(".tooltip");
+
+          const scatterPlot = d3
+            .select("#scatter-plot")
+            .append("g")
+            .attr("transform", "translate(50,50)")
+            .selectAll("dot")
+            .data(carsData)
+            .enter()
+            .append("circle")
+            .on("mouseover", (d, i) => {
+              tooltip
+                .style("opacity", 0.9)
+                .style("left", d3.event.pageX + "px")
+                .style("top", d3.event.pageY + "px").html(`
+              <p>Brand: ${d.Make}</p>
+              <p>Fuel: ${d.Fuel}</p>
+              <p>Cylinders: ${d.EngineCylinders}</p>
+              `);
+            })
+            .on("mouseout", () => {
+              tooltip.style("opacity", 0);
+            })
+            .attr("cx", (d, i) => {
+              return x(Number(d.AverageCityMPG));
+            })
+            .transition()
+            .duration(1500)
+            .attr("cy", (d, i) => {
+              return y(Number(d.AverageHighwayMPG));
+            })
+            .attr("r", (d) => {
+              const cylinders = Number(d.EngineCylinders);
+              return 2 + cylinders;
+            });
+
+          // Left axis
+          d3.select("#scatter-plot")
+            .append("g")
+            .attr("transform", "translate(50,50)")
+            .attr("color", "white")
+            .call(
+              d3
+                .axisLeft(y)
+                .tickValues([10, 20, 50, 100])
+                .tickFormat(d3.format("~s"))
+            );
+
+          // Bottom axis
+          d3.select("#scatter-plot")
+            .append("g")
+            .attr("transform", "translate(50,550)")
+            .attr("color", "white")
+            .call(
+              d3
+                .axisBottom(x)
+                .tickValues([10, 20, 50, 100])
+                .tickFormat(d3.format("~s"))
+            );
+        };
+
+        buildScatterPlot();
+        buildStackedBarplot();
+        buildPieChart();
+      }
+    </script>
+  </body>
+</html>
